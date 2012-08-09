@@ -32,6 +32,18 @@ case class Log(text: String) extends Debugging
 "B" Fluppet (=good beast, food)
 "b" Snorg (=bad beast, predator)
 */
+sealed trait FieldOfView
+case object EmptyCell extends FieldOfView
+case object WallContent extends FieldOfView
+case object Wall extends FieldOfView
+case object YourMasterBot extends FieldOfView
+case object EnemyMasterBot extends FieldOfView
+case object YourSlaveBot extends FieldOfView
+case object EnemySlaveBot extends FieldOfView
+case object GoodPlant extends FieldOfView
+case object BadPlant extends FieldOfView
+case object GoodBeast extends FieldOfView
+case object BadBeast extends FieldOfView
 
 object Bot {
 
