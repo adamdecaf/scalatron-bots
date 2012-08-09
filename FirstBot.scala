@@ -3,9 +3,21 @@
 case class KeyValuePair(key: String, value: String)
 
 sealed trait ServerToPlugin
+
 case class Welcome(name: String, apocalypse: Int, round: Int) extends ServerToPlugin
+object Welcome {
+  def empty = Welcome("", -1, -1)
+}
+
 case class React(generation: Int, name: String, time: Int, view: String, energy: Int, master: String, collision: Option[String]) extends ServerToPlugin
+object React {
+  def empty = React(-1, "", -1, "", -99999, "", None)
+}
+
 case class Goodbye(energy: Int) extends ServerToPlugin
+object Goodbye {
+  def empty = Goodbye(-99999)
+}
 
 sealed trait PluginToServer
 case class Move(vertical: Int, horizontal: Int) extends PluginToServer
@@ -50,16 +62,15 @@ case object BadBeast extends FieldOfView
 object Bot extends ParsingHelpers {
 
   def respond(input: String): String = {
-    //"Log(text=" + buildReact(input) + ")"
-    println(buildReact(input))
-    ""
+    val react = buildReact(input)
+    "Say(text=%s)".format(react.name)
   }
 
 }
 
 trait ParsingHelpers {
   def buildReact(input: String): React =
-    pullReact(input).get
+    pullReact(input).getOrElse(React.empty)
 
   private def pullCommand(input: String, keyword: String): Option[String] = {
     if (input.contains(keyword)) {
