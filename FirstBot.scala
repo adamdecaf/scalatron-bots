@@ -1,5 +1,7 @@
 // Scalatron
 
+case class KeyValuePair(key: String, value: String)
+
 sealed trait ServerToPlugin
 case class Welcome(name: String, apocalypse: Int, round: Int) extends ServerToPlugin
 case class React(generation: Int, name: String, time: Int, view: String, energy: Int, master: String, collision: Option[String]) extends ServerToPlugin
@@ -45,15 +47,76 @@ case object BadPlant extends FieldOfView
 case object GoodBeast extends FieldOfView
 case object BadBeast extends FieldOfView
 
-object Bot {
+object Bot extends ParsingHelpers {
 
   def respond(input: String): String = {
-
+    //"Log(text=" + buildReact(input) + ")"
+    println(buildReact(input))
+    ""
   }
 
 }
 
+trait ParsingHelpers {
+  def buildReact(input: String): React =
+    pullReact(input).get
+
+  private def pullCommand(input: String, keyword: String): Option[String] = {
+    if (input.contains(keyword)) {
+      (0 to input.length).foreach {
+        loc =>
+          val actualLength = math.min(input.length, loc + keyword.length)
+          val potentialKeyword = input.substring(loc, actualLength)
+          println(potentialKeyword)
+          if (potentialKeyword == keyword) {
+            return Some(input.substring(loc).takeWhile(_ != ')'))
+          }
+      }
+      None
+    } else {
+      None
+    }
+  }
+
+  private def pullProperties(command: String): List[KeyValuePair] = {
+    // Assume a string like:
+    // prop=value,prop=value,...
+    command.split(",").map {
+      pair =>
+        val split = pair.split("=")
+        KeyValuePair(split(0), split(1))
+    }.toList
+  }
+
+  private def pullProperty(commands: List[KeyValuePair], needle: String): Option[String] = {
+    commands.foreach {
+      command =>
+        if (command.key.toLowerCase == needle.toLowerCase)
+          return Some(command.value)
+    }
+    None
+  }
+
+  private def pullReact(input: String): Option[React] = {
+    pullCommand(input, "React").map {
+      command =>
+        // Strip off "React(" and ")" from the command
+        val trimmedCommand = command.drop(6).dropRight(1)
+        val keyValuePairs = pullProperties(trimmedCommand)
+        return Some(React(
+          generation = pullProperty(keyValuePairs, "generation").getOrElse("-1").toInt,
+          name = pullProperty(keyValuePairs, "name").getOrElse(""),
+          time = pullProperty(keyValuePairs, "time").getOrElse("-1").toInt,
+          view = pullProperty(keyValuePairs, "view").getOrElse(""),
+          energy = pullProperty(keyValuePairs, "energy").getOrElse("-999999").toInt,
+          master = "",
+          collision = None
+        ))
+    }
+  }
+
+}
 
 class ControlFunctionFactory {
-  def create = Bot().respond _
+  def create = Bot.respond _
 }
